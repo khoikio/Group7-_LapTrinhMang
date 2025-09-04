@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💬 Chat Room</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Sidebar cho room controls */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+            border-right: 2px solid #dee2e6;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            min-width: 250px;
+        }
+
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .online-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Sidebar Styles */
+        .sidebar-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .current-room {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .room-controls {
+            margin-bottom: 20px;
+        }
+
+        .room-input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .room-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .room-input:focus {
+            border-color: #667eea;
+        }
+
+        .join-btn {
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+
+        .join-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .quick-rooms {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .quick-room-btn {
+            padding: 10px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .quick-room-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .user-info {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 2px solid #dee2e6;
+            text-align: center;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message.own .message-avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            background: white;
+            padding: 15px 18px;
+            border-radius: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .message.own .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message-time {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .system-message {
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px 20px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border-radius: 20px;
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        .input-area {
+            padding: 25px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            transition: border-color 0.2s;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+        }
+
+        .message-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .connection-status {
+            padding: 10px 25px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .connection-status.show {
+            display: block;
+        }
+
+        .connection-status.success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .connection-status.error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* Scrollbar */
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+                flex-direction: column;
+                max-width: 100%;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                min-height: 200px;
+                border-right: none;
+                border-bottom: 2px solid #dee2e6;
+                padding: 15px;
+            }
+
+            .main-chat {
+                flex: 1;
+                min-height: 0;
+            }
+
+            .chat-header {
+                padding: 15px 20px;
+            }
+
+            .chat-title {
+                font-size: 18px;
+            }
+
+            .messages-container {
+                padding: 15px;
+            }
+
+            .input-area {
+                padding: 15px;
+            }
+
+            .message-bubble {
+                max-width: 85%;
+            }
+
+            .quick-rooms {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+
+            .quick-room-btn {
+                flex: 1;
+                min-width: calc(50% - 2.5px);
+                padding: 8px;
+                font-size: 12px;
+            }
+
+            .sidebar-title {
+                font-size: 16px;
+            }
+
+            .connection-status {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+        }
+
+        /* For very small screens */
+        @media (max-width: 480px) {
+            .sidebar {
+                padding: 10px;
+            }
+
+            .room-input-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .join-btn {
+                width: 100%;
+            }
+
+            .quick-room-btn {
+                min-width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 18px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            max-width: 80px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .user-info .username {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .logout-form {
+            display: inline;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Room controls */
+        .room-controls {
+            padding: 15px 25px;
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .room-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .room-input input {
+            padding: 6px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            font-size: 14px;
+            outline: none;
+            width: 120px;
+        }
+
+        .room-input input:focus {
+            border-color: #667eea;
+        }
+
+        .join-btn {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .join-btn:hover {
+            background: #5a67d8;
+        }
+
+        .quick-rooms {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .quick-room-btn {
+            padding: 4px 10px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border: 1px solid #667eea;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-room-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Sidebar cho room controls -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">� Quản lý phòng</div>
+                <div class="current-room">
+                    Phòng: <span id="currentRoom">general</span>
+                </div>
+            </div>
+
+            <div class="room-controls">
+                <div class="room-input-group">
+                    <input type="text" class="room-input" id="roomNameInput" placeholder="Tên phòng..." maxlength="20">
+                    <button class="join-btn" id="joinRoomBtn">Tham gia</button>
+                </div>
+                
+                <div class="quick-rooms">
+                    <button class="quick-room-btn" onclick="joinQuickRoom('general')">📢 General</button>
+                    <button class="quick-room-btn" onclick="joinQuickRoom('study')">📚 Học tập</button>
+                    <button class="quick-room-btn" onclick="joinQuickRoom('work')">💼 Công việc</button>
+                    <button class="quick-room-btn" onclick="joinQuickRoom('random')">🎲 Random</button>
+                    <button class="quick-room-btn" onclick="joinQuickRoom('help')">❓ Trợ giúp</button>
+                </div>
+            </div>
+
+            <div class="user-info">
+                <div class="user-name" th:text="'👨‍🎓 ' + ${#authentication.name}">👨‍🎓 Loading...</div>
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="logout-btn">Đăng xuất</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main chat area -->
+        <div class="main-chat">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <span>💬</span>
+                    <span>Chat Room</span>
+                    <div class="status-indicator" id="statusIndicator"></div>
+                </div>
+                <div class="connection-status" id="connectionStatus">
+                    🔄 Đang kết nối tới server...
+                </div>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="system-message">
+                    🎉 Chào mừng đến với phòng chat! Hãy bắt đầu trò chuyện nào!
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea 
+                        class="message-input" 
+                        id="messageInput" 
+                        placeholder="Nhập tin nhắn của bạn..."
+                        rows="1"></textarea>
+                </div>
+                <button class="send-button" id="sendButton" disabled>
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        let socket = null;
+        let currentUser = null;
+        let currentRoom = 'general';
+        let isLoggedIn = true; // User is already logged in via Spring Security
+
+        // DOM elements
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const currentRoomSpan = document.getElementById('currentRoom');
+        const roomNameInput = document.getElementById('roomNameInput');
+        const joinRoomBtn = document.getElementById('joinRoomBtn');
+
+        // Get current user from Thymeleaf
+        const username = /*[[${#authentication.name}]]*/ 'defaultUser';
+        currentUser = {
+            name: username,
+            avatar: username.charAt(0).toUpperCase()
+        };
+
+        // WebSocket connection with improved mobile support
+        let reconnectAttempts = 0;
+        let maxReconnectAttempts = 5;
+        let heartbeatInterval = null;
+        let lastHeartbeat = Date.now();
+
+        function connectWebSocket() {
+            if (!isLoggedIn) return;
+            
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                return;
+            }
+            
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const host = window.location.host;
+                const wsUrl = `${protocol}//${host}/chat`;
+                
+                socket = new WebSocket(wsUrl);
+                
+                socket.onopen = function(event) {
+                    console.log("🟢 Kết nối WebSocket thành công!");
+                    showConnectionStatus("🟢 Đã kết nối! Bạn có thể chat ngay.", "success");
+                    reconnectAttempts = 0;
+                    
+                    // Start heartbeat to keep connection alive
+                    startHeartbeat();
+                    
+                    // Join default room
+                    setTimeout(() => {
+                        joinRoom('general');
+                    }, 500);
+                };
+                
+                socket.onmessage = function(event) {
+                    console.log("📨 Nhận tin nhắn:", event.data);
+                    lastHeartbeat = Date.now();
+                    
+                    // Handle heartbeat/ping messages
+                    if (event.data === 'ping') {
+                        socket.send('pong');
+                        return;
+                    }
+                    
+                    try {
+                        const chatMessage = JSON.parse(event.data);
+                        addReceivedMessage(chatMessage);
+                    } catch (e) {
+                        // Fallback for plain text messages
+                        addReceivedMessage({
+                            nickname: 'Unknown',
+                            message: event.data,
+                            room: currentRoom
+                        });
+                    }
+                };
+                
+                socket.onclose = function(event) {
+                    console.log("🔴 WebSocket đã đóng. Code:", event.code, "Reason:", event.reason);
+                    stopHeartbeat();
+                    
+                    if (isLoggedIn && reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        showConnectionStatus(`� Mất kết nối! Thử lại lần ${reconnectAttempts}/${maxReconnectAttempts}...`, "error");
+                        
+                        // Exponential backoff: 2^attempts seconds, max 30s
+                        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                        setTimeout(() => {
+                            if (socket.readyState === WebSocket.CLOSED && isLoggedIn) {
+                                connectWebSocket();
+                            }
+                        }, delay);
+                    } else if (reconnectAttempts >= maxReconnectAttempts) {
+                        showConnectionStatus("❌ Không thể kết nối! Hãy tải lại trang.", "error");
+                    }
+                };
+                
+                socket.onerror = function(error) {
+                    console.error("❌ Lỗi WebSocket:", error);
+                    showConnectionStatus("❌ Lỗi kết nối! Kiểm tra mạng.", "error");
+                };
+            } catch (error) {
+                console.error("❌ Không thể tạo WebSocket:", error);
+                showConnectionStatus("❌ Không thể kết nối tới server!", "error");
+            }
+        }
+
+        // Heartbeat to keep connection alive (especially for mobile)
+        function startHeartbeat() {
+            stopHeartbeat(); // Clear any existing interval
+            
+            heartbeatInterval = setInterval(() => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    // Send ping every 30 seconds
+                    socket.send('ping');
+                    
+                    // Check if we haven't received any message in the last 60 seconds
+                    if (Date.now() - lastHeartbeat > 60000) {
+                        console.warn("⚠️ Không nhận được heartbeat, có thể mất kết nối");
+                        socket.close();
+                    }
+                }
+            }, 30000); // 30 seconds
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+            }
+        }
+
+        // Show connection status
+        function showConnectionStatus(message, type) {
+            connectionStatus.textContent = message;
+            connectionStatus.className = `connection-status show ${type}`;
+            
+            // Update status indicator
+            const indicator = document.getElementById('statusIndicator');
+            if (type === 'success') {
+                indicator.style.background = '#4ade80';
+                indicator.style.animation = 'pulse 2s infinite';
+            } else {
+                indicator.style.background = '#ef4444';
+                indicator.style.animation = 'none';
+            }
+            
+            // Auto hide after 5 seconds for success, keep showing for errors
+            if (type === 'success') {
+                setTimeout(() => {
+                    connectionStatus.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        // Generate random user for incoming messages
+        function generateRandomUser() {
+            const names = ['Minh', 'Hải', 'Lan', 'Tuấn', 'Linh', 'Đức', 'Nga', 'Hùng', 'Thu', 'Nam'];
+            const name = names[Math.floor(Math.random() * names.length)];
+            return {
+                name: name,
+                avatar: name.charAt(0).toUpperCase(),
+                id: Date.now()
+            };
+        }
+
+        // Add received message (from other users)
+        function addReceivedMessage(chatMessage) {
+            // Ẩn tin nhắn kỹ thuật 'pong' và 'ping'
+            if (chatMessage.message === 'pong' || chatMessage.message === 'ping') {
+                return;
+            }
+
+            const messageDiv = document.createElement('div');
+
+            // Check if it's from current user
+            const isOwnMessage = chatMessage.nickname === currentUser.name;
+            messageDiv.className = isOwnMessage ? 'message own' : 'message';
+
+            const time = new Date().toLocaleTimeString('vi-VN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            // Use the nickname from message or generate random for demo
+            let displayName = chatMessage.nickname || 'Unknown';
+            let avatar = displayName.charAt(0).toUpperCase();
+
+            // Special styling for system messages
+            if (chatMessage.nickname === 'System') {
+                messageDiv.className = 'system-message';
+                messageDiv.textContent = chatMessage.message;
+                messagesContainer.appendChild(messageDiv);
+                scrollToBottom();
+                return;
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-bubble">
+                    <div class="message-text">${escapeHtml(chatMessage.message)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Add own message (deprecated - server now handles echo)
+        function addOwnMessage(content) {
+            // Server will echo back the message, so we don't need to add it here
+        }
+
+        // Send message
+        function sendMessage() {
+            if (!isLoggedIn) return;
+            
+            const content = messageInput.value.trim();
+            
+            if (!content) return;
+            
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                // Create chat message object
+                const chatMessage = {
+                    nickname: currentUser.name,
+                    message: content,
+                    room: currentRoom
+                };
+                
+                // Send as JSON
+                socket.send(JSON.stringify(chatMessage));
+            } else {
+                showConnectionStatus("❌ Chưa kết nối được!", "error");
+            }
+            
+            messageInput.value = '';
+            adjustTextarea();
+            updateSendButton();
+        }
+
+        // Join room function
+        function joinRoom(roomName) {
+            if (!roomName || !socket || socket.readyState !== WebSocket.OPEN) return;
+            
+            const joinCommand = {
+                nickname: currentUser.name,
+                message: `/join ${roomName}`,
+                room: currentRoom
+            };
+            
+            socket.send(JSON.stringify(joinCommand));
+            currentRoom = roomName;
+            currentRoomSpan.textContent = roomName;
+        }
+
+        // Quick room join
+        function joinQuickRoom(roomName) {
+            joinRoom(roomName);
+            roomNameInput.value = '';
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Auto-resize textarea
+        function adjustTextarea() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+        }
+
+        // Update send button
+        function updateSendButton() {
+            const hasContent = messageInput.value.trim().length > 0;
+            sendButton.disabled = !hasContent || !isLoggedIn;
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        messageInput.addEventListener('input', function() {
+            adjustTextarea();
+            updateSendButton();
+        });
+
+        // Room controls event listeners
+        joinRoomBtn.addEventListener('click', function() {
+            const roomName = roomNameInput.value.trim();
+            if (roomName) {
+                joinRoom(roomName);
+                roomNameInput.value = '';
+            }
+        });
+
+        roomNameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const roomName = roomNameInput.value.trim();
+                if (roomName) {
+                    joinRoom(roomName);
+                    roomNameInput.value = '';
+                }
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Connect to WebSocket immediately since user is authenticated
+            connectWebSocket();
+            messageInput.focus();
+            
+            // Handle app lifecycle for mobile
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    console.log("📱 App went to background, maintaining connection...");
+                    // Keep heartbeat running
+                } else {
+                    console.log("📱 App returned to foreground");
+                    // Check connection status and reconnect if needed
+                    if (!socket || socket.readyState !== WebSocket.OPEN) {
+                        console.log("🔄 Reconnecting after returning from background...");
+                        connectWebSocket();
+                    }
+                }
+            });
+
+            // Handle page beforeunload
+            window.addEventListener('beforeunload', function() {
+                stopHeartbeat();
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.close();
+                }
+            });
+
+            // Handle network status changes
+            window.addEventListener('online', function() {
+                console.log("📶 Network is back online");
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    showConnectionStatus("📶 Mạng đã kết nối lại! Đang kết nối...", "connecting");
+                    setTimeout(() => connectWebSocket(), 1000);
+                }
+            });
+
+            window.addEventListener('offline', function() {
+                console.log("📵 Network is offline");
+                showConnectionStatus("📵 Mất kết nối mạng!", "error");
+                stopHeartbeat();
+            });
+            
+            // Welcome message
+            setTimeout(() => {
+                const welcomeDiv = document.createElement('div');
+                welcomeDiv.className = 'system-message';
+                welcomeDiv.textContent = `Xin chào ${currentUser.name}! 👋 Bạn đã tham gia phòng chat.`;
+                messagesContainer.appendChild(welcomeDiv);
+                scrollToBottom();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

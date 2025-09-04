@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎓 Đăng nhập - Chat Room</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .login-header .login-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .login-header h2 {
+            color: #1e293b;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .login-header p {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 15px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .demo-info {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            color: #667eea;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .demo-info strong {
+            color: #4c63d2;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            .login-header h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="login-icon">🎓</div>
+            <h2>Đăng nhập Chat Room</h2>
+            <p>Vui lòng nhập thông tin sinh viên</p>
+        </div>
+
+        <!-- Error Message -->
+        <div th:if="${errorMessage}" class="alert alert-error">
+            ❌ <span th:text="${errorMessage}"></span>
+        </div>
+
+        <!-- Logout Message -->
+        <div th:if="${logoutMessage}" class="alert alert-success">
+            ✅ <span th:text="${logoutMessage}"></span>
+        </div>
+
+        <form th:action="@{/login}" method="post" class="login-form">
+            <div class="input-group">
+                <label for="username">Mã sinh viên</label>
+                <input type="text" id="username" name="username" placeholder="Nhập mã sinh viên..." required autofocus>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Mật khẩu</label>
+                <input type="password" id="password" name="password" placeholder="Nhập mật khẩu..." required>
+            </div>
+            
+            <button type="submit" class="login-btn">
+                🚀 Đăng nhập
+            </button>
+        </form>
+
+        <div class="demo-info">
+            <strong>🔐 Tài khoản demo:</strong><br>
+            <div style="margin-top: 10px; text-align: left;">
+                <div><strong>Sinh viên:</strong></div>
+                <div>• sv01, sv02, sv03, sv04, sv05</div>
+                <div>• sv06, sv07, sv08, sv09, sv10</div>
+                <div style="color: #4c63d2; font-size: 12px;">Mật khẩu tất cả: <strong>123</strong></div>
+                <div style="margin-top: 8px;"><strong>Giảng viên:</strong></div>
+                <div>• teacher01 / teacher123</div>
+                <div style="margin-top: 8px;"><strong>Admin:</strong></div>
+                <div>• admin / admin123</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

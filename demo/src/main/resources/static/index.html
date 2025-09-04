@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💬 Chat Room</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .online-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message.own .message-avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            background: white;
+            padding: 15px 18px;
+            border-radius: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .message.own .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message-text {
+            font-size: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message-time {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .system-message {
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px 20px;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border-radius: 20px;
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        .input-area {
+            padding: 25px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            transition: border-color 0.2s;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+        }
+
+        .message-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .send-button {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .connection-status {
+            padding: 10px 25px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .connection-status.show {
+            display: block;
+        }
+
+        .connection-status.success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .connection-status.error {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        /* Scrollbar */
+        .messages-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .chat-header {
+                padding: 15px 20px;
+            }
+
+            .chat-title {
+                font-size: 20px;
+            }
+
+            .messages-container {
+                padding: 20px;
+            }
+
+            .input-area {
+                padding: 20px;
+            }
+
+            .message-bubble {
+                max-width: 85%;
+            }
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 18px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            max-width: 80px;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-6px);
+                opacity: 1;
+            }
+        }
+
+        /* Login Modal Styles */
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .login-header .login-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .login-header h2 {
+            color: #1e293b;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .login-header p {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        @keyframes spin {
+            0% { transform: translateY(-50%) rotate(0deg); }
+            100% { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        .login-error {
+            color: #dc2626;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+
+        .user-info .username {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .logout-form {
+            display: inline;
+        }
+
+        /* Quiz Styles */
+        .quiz-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+            color: white;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .quiz-question {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .quiz-option {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .quiz-option:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .quiz-option.selected {
+            background: #4CAF50;
+            border-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        .quiz-timer {
+            text-align: center;
+            font-size: 1.1em;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .quiz-scores {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .quiz-scores h4 {
+            margin: 0 0 10px 0;
+            text-align: center;
+            color: #FFD700;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .score-item:last-child {
+            border-bottom: none;
+        }
+
+        .quiz-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .quiz-btn {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .quiz-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .quiz-btn.secondary {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            box-shadow: 0 4px 15px rgba(116, 185, 255, 0.3);
+        }
+
+        .quiz-btn.secondary:hover {
+            box-shadow: 0 6px 20px rgba(116, 185, 255, 0.4);
+        }
+
+        .quiz-answer-form {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .answer-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 60px;
+        }
+
+        .answer-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .answer-btn.correct {
+            background: #4CAF50;
+            border-color: #45a049;
+        }
+
+        .answer-btn.incorrect {
+            background: #f44336;
+            border-color: #da190b;
+        }
+
+        .quiz-results {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+            color: white;
+            box-shadow: 0 8px 32px rgba(17, 153, 142, 0.3);
+        }
+
+        .quiz-winner {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 15px 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .quiz-final-scores {
+            display: grid;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .final-score-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rank-medal {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .quiz-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .quiz-answer-form {
+                justify-content: center;
+            }
+            
+            .answer-btn {
+                min-width: 50px;
+                padding: 8px 15px;
+            }
+            
+            .quiz-container {
+                padding: 15px;
+                margin: 8px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="chat-title">
+                <span>💬</span>
+                <span>Chat Room</span>
+                <div class="status-indicator" id="statusIndicator"></div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button class="quiz-btn" onclick="sendQuizCommand('/quiz start')" style="padding: 8px 16px; font-size: 14px;">
+                    🎯 Quiz
+                </button>
+                <div class="user-info">
+                    <span class="username" sec:authentication="name">👨‍🎓 Loading...</span>
+                    <form th:action="@{/logout}" method="post" class="logout-form">
+                        <button type="submit" class="logout-btn">Đăng xuất</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="connection-status" id="connectionStatus">
+            🔄 Đang kết nối tới server...
+        </div>
+
+        <div class="messages-container" id="messagesContainer">
+            <div class="system-message">
+                🎉 Chào mừng đến với phòng chat! Hãy bắt đầu trò chuyện nào!
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea 
+                    class="message-input" 
+                    id="messageInput" 
+                    placeholder="Nhập tin nhắn của bạn..."
+                    rows="1"></textarea>
+            </div>
+            <button class="send-button" id="sendButton" disabled>
+                ➤
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentUser = null;
+        let isLoggedIn = true; // User is already logged in via Spring Security
+
+        // DOM elements
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const connectionStatus = document.getElementById('connectionStatus');
+
+        // Initialize user from server-side authentication
+        currentUser = {
+            name: document.querySelector('.username').textContent.replace('👨‍🎓 ', ''),
+            avatar: document.querySelector('.username').textContent.replace('👨‍🎓 ', '').charAt(0).toUpperCase()
+        };
+
+        // Connect to WebSocket
+        function connectWebSocket() {
+            if (!isLoggedIn) return;
+            
+            try {
+                socket = new WebSocket("ws://localhost:8080/chat");
+                
+                socket.onopen = function(event) {
+                    console.log("🟢 Kết nối WebSocket thành công!");
+                    showConnectionStatus("🟢 Đã kết nối! Bạn có thể chat ngay.", "success");
+                };
+                
+                socket.onmessage = function(event) {
+                    console.log("📨 Nhận tin nhắn:", event.data);
+                    addReceivedMessage(event.data);
+                };
+                
+                socket.onclose = function(event) {
+                    console.log("🔴 WebSocket đã đóng. Code:", event.code, "Reason:", event.reason);
+                    if (isLoggedIn) {
+                        showConnectionStatus("🔴 Mất kết nối! Đang thử kết nối lại...", "error");
+                        // Thử kết nối lại sau 3 giây
+                        setTimeout(() => {
+                            if (socket.readyState === WebSocket.CLOSED && isLoggedIn) {
+                                connectWebSocket();
+                            }
+                        }, 3000);
+                    }
+                };
+                
+                socket.onerror = function(error) {
+                    console.error("❌ Lỗi WebSocket:", error);
+                    showConnectionStatus("❌ Lỗi kết nối! Kiểm tra server.", "error");
+                };
+            } catch (error) {
+                console.error("❌ Không thể tạo WebSocket:", error);
+                showConnectionStatus("❌ Không thể kết nối tới server!", "error");
+            }
+        }
+
+        // Show connection status
+        function showConnectionStatus(message, type) {
+            connectionStatus.textContent = message;
+            connectionStatus.className = `connection-status show ${type}`;
+            
+            // Update status indicator
+            const indicator = document.getElementById('statusIndicator');
+            if (type === 'success') {
+                indicator.style.background = '#4ade80';
+                indicator.style.animation = 'pulse 2s infinite';
+            } else {
+                indicator.style.background = '#ef4444';
+                indicator.style.animation = 'none';
+            }
+            
+            // Auto hide after 5 seconds for success, keep showing for errors
+            if (type === 'success') {
+                setTimeout(() => {
+                    connectionStatus.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        // Generate random user for incoming messages
+        function generateRandomUser() {
+            const names = ['Minh', 'Hải', 'Lan', 'Tuấn', 'Linh', 'Đức', 'Nga', 'Hùng', 'Thu', 'Nam'];
+            const name = names[Math.floor(Math.random() * names.length)];
+            return {
+                name: name,
+                avatar: name.charAt(0).toUpperCase(),
+                id: Date.now()
+            };
+        }
+
+        // Add received message (from other users)
+        function addReceivedMessage(content) {
+            // Skip ping/pong heartbeat messages
+            if (content === 'pong' || content === 'ping') {
+                return;
+            }
+
+            // Check if it's a quiz message
+            if (isQuizMessage(content)) {
+                addQuizMessage(content);
+                return;
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const time = new Date().toLocaleTimeString('vi-VN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            // Generate random user for demo
+            const user = generateRandomUser();
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${user.avatar}</div>
+                <div class="message-bubble">
+                    <div class="message-text">${escapeHtml(content)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Add own message
+        function addOwnMessage(content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message own';
+            
+            const time = new Date().toLocaleTimeString('vi-VN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${currentUser.avatar}</div>
+                <div class="message-bubble">
+                    <div class="message-text">${escapeHtml(content)}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Check if message is a quiz message
+        function isQuizMessage(content) {
+            return content.includes('🎯 **QUIZ') || 
+                   content.includes('🏁 **KẾT THÚC QUIZ') ||
+                   content.includes('📊 **BẢNG ĐIỂM QUIZ') ||
+                   content.includes('🎯 **HƯỚNG DẪN QUIZ');
+        }
+
+        // Add quiz message with special formatting
+        function addQuizMessage(content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message system';
+            
+            const time = new Date().toLocaleTimeString('vi-VN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+
+            // Parse quiz content
+            const quizContainer = formatQuizContent(content);
+            
+            messageDiv.innerHTML = `
+                <div class="quiz-container">
+                    ${quizContainer}
+                    <div class="message-time" style="text-align: center; margin-top: 15px; color: rgba(255,255,255,0.7);">
+                        ${time}
+                    </div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+
+            // Add event listeners for quiz buttons if present
+            attachQuizEventListeners();
+        }
+
+        // Format quiz content with interactive elements
+        function formatQuizContent(content) {
+            // Check if it's a quiz question
+            if (content.includes('🎯 **QUIZ GAME - Câu')) {
+                return formatQuizQuestion(content);
+            }
+            
+            // Check if it's quiz results
+            if (content.includes('🏁 **KẾT THÚC QUIZ')) {
+                return formatQuizResults(content);
+            }
+            
+            // Check if it's scoreboard
+            if (content.includes('📊 **BẢNG ĐIỂM')) {
+                return formatScoreboard(content);
+            }
+            
+            // Check if it's help
+            if (content.includes('🎯 **HƯỚNG DẪN QUIZ')) {
+                return formatQuizHelp(content);
+            }
+            
+            // Default formatting with markdown support
+            return formatMarkdown(content);
+        }
+
+        // Format quiz question with interactive buttons
+        function formatQuizQuestion(content) {
+            const lines = content.split('\n');
+            let questionNumber = '';
+            let question = '';
+            let options = {A: '', B: '', C: '', D: ''};
+            let scoreboard = '';
+            
+            let currentSection = '';
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (line.includes('**QUIZ GAME - Câu')) {
+                    questionNumber = line.match(/Câu (\d+\/\d+)/)?.[0] || '';
+                } else if (line.startsWith('❓ **') && line.includes('**')) {
+                    question = line.replace('❓ **', '').replace('**', '');
+                } else if (line.startsWith('🅰️ A)')) {
+                    options.A = line.replace('🅰️ A) ', '');
+                } else if (line.startsWith('🅱️ B)')) {
+                    options.B = line.replace('🅱️ B) ', '');
+                } else if (line.startsWith('🅲️ C)')) {
+                    options.C = line.replace('🅲️ C) ', '');
+                } else if (line.startsWith('🅳️ D)')) {
+                    options.D = line.replace('🅳️ D) ', '');
+                } else if (line.includes('📊 **Bảng điểm')) {
+                    currentSection = 'scoreboard';
+                } else if (currentSection === 'scoreboard' && line.startsWith('•')) {
+                    scoreboard += line + '<br>';
+                }
+            }
+
+            return `
+                <div class="quiz-header">
+                    🎯 QUIZ GAME - ${questionNumber}
+                </div>
+                <div class="quiz-question">
+                    ❓ ${question}
+                </div>
+                <div class="quiz-options">
+                    <div class="quiz-option" data-answer="A">
+                        🅰️ ${options.A}
+                    </div>
+                    <div class="quiz-option" data-answer="B">
+                        🅱️ ${options.B}
+                    </div>
+                    <div class="quiz-option" data-answer="C">
+                        🅲️ ${options.C}
+                    </div>
+                    <div class="quiz-option" data-answer="D">
+                        🅳️ ${options.D}
+                    </div>
+                </div>
+                <div class="quiz-timer">
+                    ⏰ Thời gian: 30 giây | 🏆 Điểm thưởng: 10 điểm
+                </div>
+                <div class="quiz-answer-form">
+                    <button class="answer-btn" data-answer="A">A</button>
+                    <button class="answer-btn" data-answer="B">B</button>
+                    <button class="answer-btn" data-answer="C">C</button>
+                    <button class="answer-btn" data-answer="D">D</button>
+                </div>
+                ${scoreboard ? `<div class="quiz-scores"><h4>📊 Bảng điểm hiện tại</h4>${scoreboard}</div>` : ''}
+                <div class="quiz-controls">
+                    <button class="quiz-btn secondary" onclick="sendQuizCommand('/quiz score')">📊 Xem điểm</button>
+                    <button class="quiz-btn" onclick="sendQuizCommand('/quiz stop')">✋ Dừng game</button>
+                </div>
+            `;
+        }
+
+        // Format quiz results
+        function formatQuizResults(content) {
+            const formattedContent = formatMarkdown(content);
+            return `
+                <div class="quiz-results">
+                    ${formattedContent}
+                    <div class="quiz-controls" style="margin-top: 20px;">
+                        <button class="quiz-btn" onclick="sendQuizCommand('/quiz start')">🚀 Chơi lại</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Format scoreboard
+        function formatScoreboard(content) {
+            return `<div class="quiz-scores">${formatMarkdown(content)}</div>`;
+        }
+
+        // Format quiz help
+        function formatQuizHelp(content) {
+            return `
+                <div style="text-align: center;">
+                    ${formatMarkdown(content)}
+                    <div class="quiz-controls" style="margin-top: 20px;">
+                        <button class="quiz-btn" onclick="sendQuizCommand('/quiz start')">🚀 Bắt đầu Quiz</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Format markdown-like content
+        function formatMarkdown(content) {
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>')
+                .replace(/•/g, '•');
+        }
+
+        // Send quiz command
+        function sendQuizCommand(command) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(command);
+                addOwnMessage(command);
+            }
+        }
+
+        // Attach event listeners to quiz elements
+        function attachQuizEventListeners() {
+            // Quiz option clicks
+            document.querySelectorAll('.quiz-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove previous selections
+                    document.querySelectorAll('.quiz-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // Select current option
+                    this.classList.add('selected');
+                    
+                    // Auto submit answer after 1 second
+                    setTimeout(() => {
+                        const answer = this.dataset.answer;
+                        sendQuizCommand(`/quiz answer ${answer}`);
+                    }, 1000);
+                });
+            });
+
+            // Answer button clicks
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const answer = this.dataset.answer;
+                    sendQuizCommand(`/quiz answer ${answer}`);
+                    
+                    // Visual feedback
+                    document.querySelectorAll('.answer-btn').forEach(b => {
+                        b.style.opacity = '0.5';
+                        b.disabled = true;
+                    });
+                    this.style.opacity = '1';
+                    this.style.background = '#4CAF50';
+                });
+            });
+        }
+
+        // Send message
+        function sendMessage() {
+            if (!isLoggedIn) return;
+            
+            const content = messageInput.value.trim();
+            
+            if (!content) return;
+            
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(content);
+                // Don't add own message here since we'll receive it back from server
+            } else {
+                showConnectionStatus("❌ Chưa kết nối được!", "error");
+            }
+            
+            messageInput.value = '';
+            adjustTextarea();
+            updateSendButton();
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Auto-resize textarea
+        function adjustTextarea() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+        }
+
+        // Update send button
+        function updateSendButton() {
+            const hasContent = messageInput.value.trim().length > 0;
+            sendButton.disabled = !hasContent || !isLoggedIn;
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        messageInput.addEventListener('input', function() {
+            adjustTextarea();
+            updateSendButton();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Connect to WebSocket immediately since user is authenticated
+            connectWebSocket();
+            messageInput.focus();
+            
+            // Welcome message
+            setTimeout(() => {
+                const welcomeDiv = document.createElement('div');
+                welcomeDiv.className = 'system-message';
+                welcomeDiv.textContent = `Xin chào ${currentUser.name}! 👋 Bạn đã tham gia phòng chat.`;
+                messagesContainer.appendChild(welcomeDiv);
+                scrollToBottom();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
