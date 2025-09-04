@@ -1,0 +1,14 @@
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\bin\Debug\net9.0\keobuabao.exe
+C:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\bin\Debug\net9.0\keobuabao.deps.json
+C:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\bin\Debug\net9.0\keobuabao.runtimeconfig.json
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\bin\Debug\net9.0\keobuabao.dll
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\bin\Debug\net9.0\keobuabao.pdb
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\obj\Debug\net9.0\keobuabao.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\obj\Debug\net9.0\keobuabao.AssemblyInfoInputs.cache
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\obj\Debug\net9.0\keobuabao.AssemblyInfo.cs
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\obj\Debug\net9.0\keobuabao.csproj.CoreCompileInputs.cache
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\obj\Debug\net9.0\keobuabao.dll
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\obj\Debug\net9.0\refint\keobuabao.dll
+c:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\obj\Debug\net9.0\keobuabao.pdb
+C:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\obj\Debug\net9.0\keobuabao.genruntimeconfig.cache
+C:\Users\Minh\Documents\newproject\ProjectTest\ProjectTest\keobuabao\obj\Debug\net9.0\ref\keobuabao.dll
